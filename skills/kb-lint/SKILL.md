@@ -1,44 +1,55 @@
 ---
 name: kb-lint
-description: Run the kb-lint Python script to health-check the KB. Replaces the old LLM-based skill. Accepts --topic, --json, --md, --stale-days, --no-orphans flags.
-user-invocable: true
+description: Audit a configured knowledge base for structural problems. Use when asked to lint, validate, health-check, or review a topic or the whole KB; report findings and propose safe, scoped fixes without silently mutating notes.
 ---
 
-The LLM-based kb-lint skill has been retired. The `kb-lint` Python script handles all structural checks without an LLM call.
+# KB Lint
 
-When invoked, run:
+Use this skill to check KB structure and report actionable issues.
 
-```bash
-kb-lint $ARGUMENTS
-```
+## Startup
 
-Display the full output to the user. If `$ARGUMENTS` is empty, run `kb-lint` with no flags (full scan, plain-text report).
+1. Read references/kb-core.md and resolve KB_ROOT fail-closed.
+2. Read KB_ROOT/_checkpoint.md; surface matching active work before starting a
+   new write-capable lint operation.
+3. Read KB_ROOT/_schema.md, _rules.md, _tools/README.md, and _index.md.
+4. Determine scope from the argument: a topic slug, all, or one concise
+   clarification. A lint report is read-only unless the user explicitly asks
+   for a durable report or repair.
 
-Available flags (pass through from user args as-is):
-- `--topic <slug>` — restrict scan to one topic
-- `--json` — JSON output
-- `--md` — Markdown output
-- `--stale-days N` — staleness threshold (default 30)
-- `--no-orphans` — skip orphan detection
-- `--errors-only` — flag only errors, not warnings
+## Mechanical lint
 
-After displaying results, offer to help resolve any errors listed.
+Run the KB-provided helper, passing the resolved root and requested scope:
 
-## Companion: kb-fix
+  KB_ROOT/_tools/kb-lint.py --kb-root KB_ROOT --topic <topic>
+  KB_ROOT/_tools/kb-lint.py --kb-root KB_ROOT --all
 
-`kb-fix` is the autofix companion script. After a lint run, suggest it for mechanical fixes:
+Use the helper output as authoritative for authorship, frontmatter, wikilinks,
+queue ladder, source immutability, and media integrity. If the helper is
+missing, report the dependency and do not substitute an unreviewed mutator.
 
-```bash
-kb-fix                          # dry-run preview of all fixers
-kb-fix --fix all                # apply all fixers
-kb-fix --fix unrendered_math    # one fixer only
-kb-fix --fix all --dry-run      # preview without writing
-```
+## Human review layer
 
-Fixers available:
-- `unrendered_math` — `LaTeX: \`\cmd\`` → `$$\cmd$$` display math (addresses `unrendered_math` warning)
-- `missing_author` — inserts `author: kb-bot` in frontmatter (addresses `missing_author` info)
-- `infer_frontmatter` — adds missing `type:` and `topic:` inferred from path (addresses `missing_frontmatter_field` error)
-- `stub_frontmatter` — prepends minimal frontmatter to files with none at all (addresses `missing_frontmatter` error)
+For a full health check, inspect only the requested scope for orphan mutable
+notes, missing useful navigation targets, contradictions, stale derivative
+notes, research gaps, and task drift. A project/code finding must distinguish
+Observed repository evidence, Planned work, and Externally verified runtime or
+deployment state; missing outside evidence is not verified.
 
-Fixers that cannot be automated (require human judgement): `broken_wikilink`, `orphan`, `stale`, `source_modified`.
+When Obsidian CLI support exists, its graph-health/tasks output is supplementary
+and never overrides the KB lint contract.
+
+## Reporting and optional fixes
+
+Lead with severity, file paths, line numbers, and uncertainty. If clean, mention
+residual checks not performed. Before any multi-file fix or lint report, write a
+matching checkpoint and verify authorship on every existing target. Only use
+the KB's documented lock-safe and repair tools; never delete notes/media,
+rewrite immutable source bodies, hand-edit queues, or write _dive-queue.md.
+If a source validator, review receipt, or guarded publisher is required for a
+repair and unavailable, stop and report it.
+
+A lint report belongs under the topic's synthesis notes only when explicitly
+requested, follows the KB schema, and is then included in summary/index/log
+updates. Run scoped lint after approved changes and complete only the matching
+checkpoint.

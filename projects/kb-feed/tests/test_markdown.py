@@ -12,7 +12,7 @@ def test_append_topic_reading_list_requires_kb_bot_author(tmp_path) -> None:
     path = tmp_path / "reading-list.md"
     path.write_text(
         "---\n"
-        "author: brendan\n"
+        "author: human-user\n"
         "modified: 2026-05-01\n"
         "---\n\n"
         "# Reading List\n\n"

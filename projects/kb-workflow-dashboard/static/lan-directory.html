@@ -138,114 +138,16 @@
 
     <script>
       // ── Service registry ──────────────────────────────────────────────────
+      // Starter-safe registry. Add private services only in your local checkout;
+      // never publish account URLs, LAN inventories or deployment details.
       const SERVICES = [
-        // Local (this machine)
         {
           group: "local",
           name: "KB Dashboard",
-          url: "http://kb.local:8787",
-          host: "kb.local:8787",
-          desc: "KB workflow, queues, lint review, LAN directory",
+          url: window.location.origin,
+          host: window.location.host,
+          desc: "This local KB workflow dashboard",
           tag: "local",
-        },
-        {
-          group: "local",
-          name: "Pokemon TCG AI — Arena Viz",
-          url: "http://localhost:8765",
-          host: "localhost:8765",
-          desc: "Live battle visualiser for the PTCG AI engine",
-          tag: "local",
-        },
-        // Raspberry Pi
-        {
-          group: "pi",
-          name: "Pi-hole Admin",
-          url: "http://192.168.0.45/admin",
-          host: "192.168.0.45 (pihole.local)",
-          desc: "DNS-level ad blocker; network-wide query stats and blocklist management",
-          tag: "pi",
-        },
-        {
-          group: "pi",
-          name: "MarketingBot",
-          url: "http://192.168.0.164",
-          host: "pizero2 — 192.168.0.164",
-          desc: "Self-hosted social media scheduler; FastAPI + HTMX + APScheduler on Pi Zero 2",
-          tag: "pi",
-        },
-        {
-          group: "pi",
-          name: "pizero2 — LAN Status",
-          url: "http://192.168.0.164/status/",
-          host: "pizero2 — 192.168.0.164/status/",
-          desc: "LAN host health page; Python cron + static HTML; auto-refreshes every 60s",
-          tag: "pi",
-        },
-        // LAN
-        {
-          group: "lan",
-          name: "Router",
-          url: "http://192.168.0.1",
-          host: "AXE5400 — 192.168.0.1",
-          desc: "Main router / gateway / DHCP server; Wi-Fi 6E",
-          tag: "router",
-        },
-        {
-          group: "lan",
-          name: "IoT device — port 3000",
-          url: "http://192.168.0.115:3000",
-          host: "192.168.0.115:3000",
-          desc: "Dahua-protocol JSON device (security camera / NVR?) — not a web UI",
-          tag: "lan",
-        },
-        {
-          group: "lan",
-          name: "Unknown — port 8080",
-          url: "http://192.168.0.16:8080",
-          host: "192.168.0.16:8080",
-          desc: "Unidentified service — currently returning 404; update once identified",
-          tag: "lan",
-        },
-        // External hosted
-        {
-          group: "external",
-          name: "povar.app",
-          url: "https://povar.app/",
-          host: "povar.app",
-          desc: "Sportsbook EV automation — bet alerts, approval gate, results tracking; AWS-hosted",
-          tag: "external",
-        },
-        {
-          group: "external",
-          name: "app.alephvue.com",
-          url: "https://app.alephvue.com/",
-          host: "app.alephvue.com",
-          desc: "AlephVue app — AWS-hosted",
-          tag: "external",
-        },
-        {
-          group: "external",
-          name: "AlephVue — Issue Queue Review",
-          url: "https://app.alephvue.com/admin/issue-queue",
-          host: "app.alephvue.com/admin/issue-queue",
-          desc: "Review/edit/approve draft GitHub issues decomposed from raw notes (admin login required)",
-          tag: "external",
-        },
-        {
-          group: "external",
-          name: "bumps.cafe",
-          url: "https://www.bumps.cafe/",
-          host: "www.bumps.cafe",
-          desc: "Ambient photo + music experience; Flask on PythonAnywhere (Hacker plan)",
-          tag: "external",
-        },
-        {
-          group: "external",
-          name: "Odd Analytics (Ackee)",
-          url: "https://oddanalytics.herokuapp.com/",
-          host: "oddanalytics.herokuapp.com",
-          desc: "Self-hosted Ackee analytics instance; Heroku — check if still serving bumps.cafe traffic",
-          tag: "external",
         },
       ];
 

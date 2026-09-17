@@ -1,6 +1,7 @@
 # KB Workflow Integration
 
-Use this reference when the source-cluster-to-skill work is happening inside a KB that follows Brendan's starter structure.
+Use this reference when source-cluster-to-skill work is happening inside a KB
+that follows this starter structure.
 
 ## Design Goal
 
@@ -72,4 +73,3 @@ Stop before install when:
 - scripts, external tools, network access, or file mutation have not been reviewed;
 - provenance or licensing is unclear;
 - the candidate is useful locally but not starter-safe.
-

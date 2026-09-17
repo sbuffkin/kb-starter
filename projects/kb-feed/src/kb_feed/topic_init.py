@@ -1,6 +1,6 @@
 """Create a new KB topic skeleton from a Telegram `map <slug>` command.
 
-When Brendan maps a thread to a topic the KB does not have yet, kb-feed creates the
+When a user maps a thread to a topic the KB does not have yet, kb-feed creates the
 topic directory with kb-bot-authored skeleton files (matching KB conventions: the
 canonical reading-list section ladder, a summary, and a research-ideas file) so the
 topic behaves normally from then on. Best-effort `_index.md` row insertion keeps the

@@ -59,6 +59,9 @@ def _auto_approve_lanes(value: object) -> tuple[str, ...]:
     for raw_slug, raw_config in value.items():
         if not isinstance(raw_config, dict):
             continue
-        if bool(raw_config.get("auto_approve", False)):
+        auto_approve = raw_config.get("auto_approve", False)
+        if not isinstance(auto_approve, bool):
+            raise ValueError("lane auto_approve must be a TOML boolean, not a string or number")
+        if auto_approve:
             lanes.append(validate_topic_slug(str(raw_slug)))
     return tuple(sorted(lanes))

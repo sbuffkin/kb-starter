@@ -628,7 +628,7 @@ systemctl --user list-timers 'kb-feed-*'
 To allow systemd user units to keep running after logout (useful on the laptop):
 
 ```bash
-loginctl enable-linger brendan
+loginctl enable-linger "$USER"
 ```
 
 ---

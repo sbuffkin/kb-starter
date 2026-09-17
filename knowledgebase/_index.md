@@ -1,13 +1,16 @@
 ---
 author: kb-bot
 created: 2026-04-13
-modified: 2026-06-17
+modified: 2026-09-17
 type: index
 ---
 
 # Knowledge Base Index
 
-This file is the top-level navigation map for the KB. It is kept current as topics and projects are added. Agents: read this first, then read the `_summary.md` of whichever topic seems relevant.
+This file is the top-level navigation map for the KB. Use it or the optional
+search index to find the matching topic/project summary, then read only relevant
+notes. Project context continues through its task board and dated evidence;
+it does not require inbox triage or source ingestion.
 
 For structural conventions and rules, see [[knowledgebase/_schema]] and [[knowledgebase/_rules]].
 
@@ -28,7 +31,7 @@ The starter includes optional project scaffolds for workflow tools shipped in th
 | Project | Summary | Status | Last updated |
 |---|---|---|---|
 | [[knowledgebase/projects/kb-feed|kb-feed]] | [[knowledgebase/projects/kb-feed/_summary]] | optional scaffold | 2026-06-16 |
-| [[knowledgebase/projects/kb-workflow-dashboard|kb-workflow-dashboard]] | [[knowledgebase/projects/kb-workflow-dashboard/_summary]] | optional scaffold | 2026-06-17 |
+| [[knowledgebase/projects/kb-workflow-dashboard|kb-workflow-dashboard]] | [[knowledgebase/projects/kb-workflow-dashboard/_summary]] | optional scaffold | 2026-09-17 |
 
 ---
 

@@ -51,3 +51,12 @@ def test_load_config_parses_auto_approve_lanes(tmp_path, monkeypatch) -> None:
     config = load_config(config_path)
 
     assert config.auto_approve_lanes == ("obsidian",)
+
+
+@pytest.mark.parametrize("value", ['"false"', '"true"', '1', '0', '[]'])
+def test_auto_approval_requires_explicit_boolean(tmp_path, monkeypatch, value):
+    config_path = tmp_path / "config.toml"
+    config_path.write_text(f"[lanes.demo]\nauto_approve = {value}\n")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "fixture-token")
+    with pytest.raises(ValueError, match="TOML boolean"):
+        load_config(config_path)

@@ -1,7 +1,7 @@
 ---
 author: kb-bot
 created: 2026-05-15
-modified: 2026-05-15
+modified: 2026-09-17
 type: meta
 ---
 
@@ -47,6 +47,51 @@ media:
 - Keep the full SHA-256 in `id` for integrity and deduplication; do not make the full hash the visible filename unless there is no human-readable context.
 - The 8-character hash suffix is cosmetic; the full `id` is authoritative.
 
+### Temporary inspection state
+
+The behavioural and transport guard for `--temporary-inspection` is defined in
+Rule 29 and the CLI contract. Structurally, it is a staged, non-canonical
+inspection rather than a completed capture. When the source note is authored
+after inspection, represent a non-retained asset as `status: not-captured` with
+a descriptive `not_captured_reason`, for example `"temporarily inspected; not
+retained"` (not a literal enum). Its known hash,
+MIME, byte count, dimensions and duration may be recorded; do not give it a
+`path` or `captured` date. `description_note` remains optional. Do not use
+`--commit-staged` unless a separate retention decision permits canonical
+`_media/` custody.
+
+If an older source note already froze `status: discovered`, do not rewrite it
+just to reflect a later inspection; record the result in the mutable
+media-description note and receipt. For a derived note with no retained bytes,
+use `media_status: not-captured`, omit `local_path`, and state the exact URL,
+receipt digest, sampled coverage, omissions and non-retention in the Capture
+Status section (`## Capture Status`).
+
+The local inspector consumes only a hash-checked staged file. Its frames,
+audio, and full transcript are private ignored scratch, not source-note or
+media-description content. A bot-owned JSON receipt is required and must
+record the run and asset identifiers, exact URL, staged path, media hash and
+byte count, bounded extraction settings, local engine/cache identifiers,
+output paths and hashes, coverage/omissions, and cleanup disposition. The
+receipt is an operation record, not a source record, citation, raw-media
+archive, or claim of complete visual review. It must not contain raw media or
+full transcript/OCR payloads.
+
+Inspection cleanup is explicit and separate from capture/finalization. After
+review and source disposition (published, deferred, declined or failed), it
+may remove only newly created regular files named in that run's
+receipt/manifest whose hashes still match. It must refuse symlinks, changed or
+unrelated files, broad directories, and cleanup after an incomplete review;
+failed/interrupted scratch remains for separate disposition.
+
+For an otherwise completed frame extraction rejected only by the deterministic
+ASR-quality gate, a completed independent review may authorize the narrow
+`unusable-asr` cleanup disposition. Its receipt records
+`cleanup.reviewed_disposition` and `cleanup.review_ref`; the latter identifies
+an existing review record outside all temporary media scratch. This does not
+waive complete review, exact-file integrity or refusal of other failed and
+interrupted extractions. The shared rule and CLI contract govern this exception.
+
 Media-description notes use this frontmatter:
 
 ```yaml
@@ -70,7 +115,15 @@ local_path: "knowledgebase/_media/images/YYYY/MM/<YYYY-MM-DD>-<description>-<sho
 ---
 ```
 
-Recommended sections for media-description notes. **For `media_status: captured` image notes, the `## OCR` and `## Vision Description` sections are REQUIRED** — always write them, using `*Pending.*` as the placeholder when not yet enriched, so `kb-ocr-enrich.py` (which only fills sections that already exist) can populate them later. `kb-lint` reports a captured image note missing `## OCR` as `media-missing-ocr`. (`## Transcript` is required for video/audio.)
+For a `media-description` note, `local_path` is required only when
+`media_status: captured`; omit it for `discovered` and `not-captured`, including
+assets inspected temporarily and then removed. `media_status: captured` still
+requires canonical `_media/` bytes plus the description note, not merely a
+staged file or a receipt. `license: unknown` records unresolved rights: it is
+not clearance to retain or redistribute bytes, but it does not by itself block
+a private, attributed paraphrase with explicit inspection limits.
+
+Recommended sections for media-description notes. **For `media_status: captured` image notes, the `## OCR` and `## Vision Description` sections are REQUIRED** — always write them, using `*Pending.*` when not yet enriched. Explicit OCR-only tooling fills the OCR section; an explicitly configured image-capable reviewer interprets retained images for Vision Description. Engine/model availability and permission must be verified locally. A placeholder establishes neither image availability nor completed analysis. `kb-lint` reports a captured image note missing `## OCR` as `media-missing-ocr`. (`## Transcript` is required for captured video/audio; an inspection-only note may instead record a bounded excerpt or `*Not retained; see receipt.*`.)
 
 ```markdown
 # <Title>
@@ -83,9 +136,24 @@ Recommended sections for media-description notes. **For `media_status: captured`
 
 ## OCR
 
+## OCR Raw
+
 ## Vision Description
 
 ## Transcript
 
 ## Interpretation Notes
 ```
+
+`## OCR Raw` is optional for historical notes and is written by new OCR
+enrichment alongside the derived `## OCR` display. Preserve each engine-labelled
+attempt's exposed text before cleanup, its character length and UTF-8 digest,
+and the local media reference. Use dynamically sized fences so OCR headings or
+backticks cannot become note structure. Subprocess text is decoded stdout;
+hosted-provider text is the exposed page-markdown channel, not an HTTP response
+archive. Raw output may itself be wrong. Its preservation establishes neither
+visual interpretation, complete extraction nor permission to retain restricted
+material; do not retrofit it by rewriting immutable source-note bodies. For a
+temporary inspection, keep raw OCR, audio and full transcripts only in ignored
+scratch; a durable note may contain only a bounded necessary excerpt or an
+explicit non-retention statement with the receipt digest.

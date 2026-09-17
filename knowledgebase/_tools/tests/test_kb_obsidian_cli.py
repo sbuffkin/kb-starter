@@ -82,6 +82,66 @@ def test_search_passes_context_command_and_path(tmp_path, monkeypatch) -> None:
     ]
 
 
+def test_uses_flatpak_runtime_socket_from_xdg_base(tmp_path, monkeypatch) -> None:
+    cli = load_obsidian_module()
+    kb_root = tmp_path / "kb"
+    kb_root.mkdir()
+    runtime = tmp_path / "run"
+    flatpak_runtime = runtime / ".flatpak" / cli.OBSIDIAN_FLATPAK_ID / "xdg-run"
+    flatpak_runtime.mkdir(parents=True)
+    (flatpak_runtime / ".obsidian-cli.sock").touch()
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    write_fake_obsidian(bin_dir, 'printf "%s\\n" "$XDG_RUNTIME_DIR"\n')
+    monkeypatch.setenv("PATH", os.pathsep.join([str(bin_dir), os.environ.get("PATH", "")]))
+    monkeypatch.setenv("XDG_RUNTIME_DIR", str(runtime))
+
+    result = cli.run_obsidian(kb_root, ["version"])
+
+    assert result["ok"] is True
+    assert result["stdout"] == str(flatpak_runtime)
+    assert result["runtime_source"] == "flatpak-xdg-run"
+    assert result["socket"] == str(flatpak_runtime / ".obsidian-cli.sock")
+
+
+def test_graph_health_post_filters_topic_relative_to_vault_root(tmp_path, monkeypatch) -> None:
+    cli = load_obsidian_module()
+    vault = tmp_path / "Vault"
+    kb_root = vault / "knowledgebase"
+    kb_root.mkdir(parents=True)
+    (vault / ".obsidian").mkdir()
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    log = tmp_path / "args.log"
+    write_fake_obsidian(
+        bin_dir,
+        f"printf '%s\\n' \"$@\" >> {log}\n"
+        f"printf '%s\\n' '---' >> {log}\n"
+        "case \"$1\" in\n"
+        "  version) echo '1.12.7' ;;\n"
+        f"  vault) echo '{vault}' ;;\n"
+        "  unresolved) printf '%s\\n' '[{\"link\":\"topic-missing\",\"count\":\"2\",\"sources\":\"knowledgebase/topics/earthquake-prediction/a.md, projects/outside.md\"},{\"link\":\"other-missing\",\"count\":\"1\",\"sources\":\"knowledgebase/topics/ai-literacy/b.md\"}]' ;;\n"
+        "  orphans) printf '%s\\n' 'knowledgebase/topics/earthquake-prediction/orphan.md' 'knowledgebase/topics/ai-literacy/orphan.md' ;;\n"
+        "  deadends) printf '%s\\n' 'knowledgebase/topics/earthquake-prediction/deadend.md' 'projects/outside.md' ;;\n"
+        "  *) echo '[]' ;;\n"
+        "esac\n",
+    )
+    monkeypatch.setenv("PATH", os.pathsep.join([str(bin_dir), os.environ.get("PATH", "")]))
+
+    payload = cli.graph_health(kb_root, "earthquake-prediction")
+    unresolved = json.loads(payload["unresolved"]["stdout"])
+
+    assert payload["scope_path"] == "knowledgebase/topics/earthquake-prediction"
+    assert payload["unresolved"]["ok"] is True
+    assert [row["link"] for row in unresolved] == ["topic-missing"]
+    assert unresolved[0]["sources"] == "knowledgebase/topics/earthquake-prediction/a.md"
+    assert payload["orphans_total"]["stdout"] == "1"
+    assert payload["orphans_total"]["paths"] == ["knowledgebase/topics/earthquake-prediction/orphan.md"]
+    assert payload["deadends_total"]["stdout"] == "1"
+    assert payload["deadends_total"]["paths"] == ["knowledgebase/topics/earthquake-prediction/deadend.md"]
+    assert "path=knowledgebase/topics/earthquake-prediction" not in log.read_text(encoding="utf-8").splitlines()
+
+
 def test_rejects_unsafe_vault_paths(tmp_path, monkeypatch) -> None:
     cli = load_obsidian_module()
     kb_root = tmp_path / "kb"

@@ -26,31 +26,19 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# KB root resolution
-# ---------------------------------------------------------------------------
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
-
-def resolve_kb_root() -> Path:
-    env_val = os.environ.get("KB_ROOT")
-    if env_val:
-        return Path(os.path.expanduser(env_val)).resolve()
-    kb_config = Path.home() / ".claude/kb-config.md"
-    if kb_config.exists():
-        for line in kb_config.read_text().splitlines():
-            line = line.strip()
-            if line.startswith("KB_ROOT:") or line.startswith("KB_ROOT="):
-                val = line.split(":", 1)[-1] if ":" in line else line.split("=", 1)[-1]
-                val = val.strip().strip('"').strip("'")
-                if val:
-                    return Path(os.path.expanduser(val)).resolve()
-    return (Path.home() / "Documents/vault/knowledgebase").resolve()
-
+from kb_config import (  # noqa: E402
+    KBConfigError,
+    read_regular_text,
+    resolve_kb_root,
+)
 
 # ---------------------------------------------------------------------------
 # Scoring
@@ -146,14 +134,18 @@ def format_compact(results: list[tuple[float, dict]]) -> str:
 
 def peek_file(kb_root: Path, rel_path: str) -> str:
     """Return frontmatter + first paragraph of one file."""
-    path = kb_root / rel_path
-    if not path.is_file():
-        # Try treating as a search term / file name
+    requested = Path(rel_path).expanduser()
+    if requested.is_absolute() or ".." in requested.parts:
+        return f"File not found: {rel_path}"
+    path = kb_root / requested
+    try:
+        path.relative_to(kb_root)
+    except ValueError:
         return f"File not found: {rel_path}"
     try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as e:
-        return f"Error reading {rel_path}: {e}"
+        text = read_regular_text(path)
+    except (KBConfigError, OSError):
+        return f"File not found: {rel_path}"
 
     m = FRONTMATTER_RE.match(text)
     if not m:
@@ -195,9 +187,10 @@ def main() -> int:
     parser.add_argument("--kb-root", default=None)
     args = parser.parse_args()
 
-    kb_root = Path(args.kb_root) if args.kb_root else resolve_kb_root()
-    if not kb_root.is_dir():
-        print(f"error: KB not found at {kb_root}", file=sys.stderr)
+    try:
+        kb_root = resolve_kb_root(args.kb_root)
+    except KBConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 2
 
     if args.peek:
@@ -206,15 +199,12 @@ def main() -> int:
 
     index_path = kb_root / "_kb-index.json"
     if not index_path.exists():
-        print("Index not found — building now...", file=sys.stderr)
-        import subprocess
-        subprocess.run([sys.executable, __file__.replace("kb-search", "kb-index")], check=False)
-        if not index_path.exists():
-            kb_index_bin = Path(sys.executable).parent / "kb-index"
-            subprocess.run(["kb-index"], check=False)
-        if not index_path.exists():
-            print(f"error: could not build index at {index_path}", file=sys.stderr)
-            return 2
+        print(
+            f"error: index not found at {index_path}; run kb-index explicitly "
+            "to build it before this read-only search",
+            file=sys.stderr,
+        )
+        return 2
 
     # Warn if index is stale (>24h old)
     import time
@@ -224,13 +214,24 @@ def main() -> int:
               file=sys.stderr)
 
     try:
-        data = json.loads(index_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+        data = json.loads(read_regular_text(index_path))
+    except (KBConfigError, json.JSONDecodeError, OSError) as e:
         print(f"error: cannot read index: {e}", file=sys.stderr)
         return 2
 
-    records: list[dict] = data.get("records", [])
-    built = data.get("built", "unknown")
+    if isinstance(data, dict):
+        records: list[dict] = data.get("records", [])
+        built = data.get("built", "unknown")
+    elif isinstance(data, list):
+        # Read the list-only cache emitted by an older starter checkout.
+        records = data
+        built = "unknown"
+    else:
+        print("error: index must contain a records list", file=sys.stderr)
+        return 2
+    if not isinstance(records, list) or not all(isinstance(record, dict) for record in records):
+        print("error: index records are malformed", file=sys.stderr)
+        return 2
 
     if args.stats:
         by_type: dict[str, int] = {}
@@ -267,7 +268,7 @@ def main() -> int:
     elif args.table:
         print(format_markdown(results))
     else:
-        # Compact is default — most useful for Claude context
+        # Compact is default — useful for an agent context window
         print(f"Found {len(results)} result(s) (index built {built}):\n")
         print(format_compact(results))
 

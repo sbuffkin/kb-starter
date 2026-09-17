@@ -1,11 +1,11 @@
 ---
 author: kb-bot
 created: 2026-06-16
-modified: 2026-06-17
+modified: 2026-09-17
 type: summary
 topic: kb-workflow-dashboard
 title: KB Workflow Dashboard
-description: Local read-only web dashboard for seeing KB workflow state, surfaced holdups, and eventually safe command execution from one place.
+description: Optional local KB workflow dashboard, with historical scaffold plans preserved below.
 status: scaffold
 tags: ["kb", "workflow", "dashboard", "webapp", "tooling", "obsidian"]
 sources: []
@@ -13,6 +13,11 @@ related: ["[[knowledgebase/projects/kb-feed/_summary]]", "[[knowledgebase/ideas/
 ---
 
 # KB Workflow Dashboard
+
+> **Compatibility note:** The June scaffold description below is historical.
+> The current optional server includes command/probe endpoints and is not a
+> read-only security boundary. Inspect its README and enabled routes before
+> running it; this starter update does not authorize commands or network probes.
 
 ## LLM Orientation
 

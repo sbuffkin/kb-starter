@@ -288,7 +288,7 @@ def append_see_also_entry(
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--kb-root", default="~/Vault/knowledgebase")
+    p.add_argument("--kb-root", default=str(Path(__file__).resolve().parents[1]))
     p.add_argument(
         "--media-note",
         help="Path to a specific media-description note (relative to kb-root or absolute)",

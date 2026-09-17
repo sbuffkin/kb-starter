@@ -1,8 +1,13 @@
 # KB Workflow Dashboard
 
-Local read-only web dashboard for the user's KB workflow.
+Optional local web dashboard for the user's KB workflow.
 
-The MVP binds to `127.0.0.1`, reads the KB live from disk, and does not mutate markdown or run KB commands. Future write actions should call shared KB tools such as `_tools/kb-checkoff.py`; the dashboard should never edit queue files directly.
+The original MVP was read-only, but the current server includes command and
+network-probe endpoints. Binding to `127.0.0.1` is not an authorization boundary.
+Inspect the enabled routes before use and do not expose it to an untrusted
+network. Mutations must use the guarded shared KB tools; a dashboard click does
+not override source-review, ownership or approval requirements. The starter's
+LAN directory contains only itself; add private services locally, not in PRs.
 
 ## Run
 
@@ -44,4 +49,7 @@ The server refuses non-loopback hosts unless `--allow-non-loopback` is set. Keep
 
 ## Future Write Actions
 
-Keep the dashboard read-only until a guarded command runner exists. First candidates are lint, generated dive-queue regeneration, locked queue checkoff, path helpers, and server start/stop after showing port ownership. External skill artifacts should stay as scratch-reviewed candidates until package validation, KB comparison, and task testing are complete.
+Audit command execution separately before enabling it for a live KB. The
+shared-tool hardening does not certify every dashboard endpoint. External skill
+artifacts stay review candidates until package validation, KB comparison, task
+testing and explicit installation approval are complete.
